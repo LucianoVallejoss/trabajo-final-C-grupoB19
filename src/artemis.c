@@ -29,6 +29,15 @@ void recalcular_dinamica_orbital(EstadoOrbital *estado) {
 
     // 4. Aceleracion centripeta: ac = v^2 / r
     estado->aceleracion_centripeta = (estado->velocidad_orbital * estado->velocidad_orbital) / estado->radio_total_m;
+
+    // 5. Verificacion automatica de zona segura LEO
+    estado->es_orbita_estable = verificar_estabilidad_orbital(estado);
+}
+
+// Evalua si la altitud evita el frenado por rozamiento atmosferico (> 160 km)
+int verificar_estabilidad_orbital(const EstadoOrbital *estado) {
+    if (!estado) return 0;
+    return (estado->altitud_m >= LIMITE_ATMOSFERA) ? 1 : 0;
 }
 
 // Consigna a 
