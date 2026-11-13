@@ -49,3 +49,17 @@ void imprimir_demostracion_teorica(void) {
     printf("- Depende unicamente de la masa del cuerpo central (Tierra) y de la distancia r.\n");
     printf("----------------------------------------------------------------------\n");
 }
+// Calcula la cinematica del pulso perpendicular por referencia
+void ejecutar_pulso_lateral(ManiobraLateral *maniobra, double a_y, double delta_t) {
+    if (!maniobra) return;
+    
+    // 1. Almacenar parametros de entrada en la estructura apuntada
+    maniobra->a_y = a_y;
+    maniobra->delta_t = delta_t;
+
+    // 2. Velocidad lateral adquirida: vy = a * dt
+    maniobra->v_y = maniobra->a_y * maniobra->delta_t;
+
+    // 3. Desplazamiento transversal instantaneo: dy = (1/2) * a * dt^2
+    maniobra->delta_y = 0.5 * maniobra->a_y * (maniobra->delta_t * maniobra->delta_t);
+}
