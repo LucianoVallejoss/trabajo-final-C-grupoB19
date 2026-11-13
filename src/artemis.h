@@ -6,6 +6,7 @@
 #define M_TIERRA 5.972e24          // Masa terrestre (kg)
 #define R_TIERRA 6371000.0         // Radio terrestre medio (m)
 #define G_SUPERFICIE 9.80665       // Aceleracion de la gravedad estandar (m/s^2)
+#define LIMITE_ATMOSFERA 160000.0  // m (160 km: limite inferior seguro LEO)
 
 // Constantes de auditoria e historial
 #define MAX_HISTORIAL 50           // Capacidad maxima de simulaciones almacenadas
@@ -18,6 +19,7 @@ typedef struct {
     double velocidad_orbital;      // v (m/s)
     double periodo_segundos;       // T (s)
     double aceleracion_centripeta; // ac (m/s^2)
+    int es_orbita_estable;         // 1 = Zona segura LEO, 0 = Riesgo de decaimiento
 } EstadoOrbital;
 
 // Representacion de la maniobra con propulsor auxiliar lateral
@@ -37,6 +39,7 @@ typedef struct {
 } RegistroMision;
 
 // Funciones
+int verificar_estabilidad_orbital(const EstadoOrbital *estado);
 void inicializar_estado_base(EstadoOrbital *estado);
 void recalcular_dinamica_orbital(EstadoOrbital *estado);
 void imprimir_demostracion_teorica(void);
