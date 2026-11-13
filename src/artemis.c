@@ -72,3 +72,55 @@ void ejecutar_pulso_lateral(ManiobraLateral *maniobra, double a_y, double delta_
     // 3. Desplazamiento transversal instantaneo: dy = (1/2) * a * dt^2
     maniobra->delta_y = 0.5 * maniobra->a_y * (maniobra->delta_t * maniobra->delta_t);
 }
+// Muestra en tabla todos los parametros orbitales
+void mostrar_telemetria_detallada(const EstadoOrbital *estado) {
+    if (!estado) return;
+
+    double altitud_km = estado->altitud_m / 1000.0;
+    double radio_km = estado->radio_total_m / 1000.0;
+    double velocidad_kmh = estado->velocidad_orbital * 3.6;
+    double periodo_min = estado->periodo_segundos / 60.0;
+    double fuerza_centripeta = estado->masa_nave_kg * estado->aceleracion_centripeta;
+    double factor_g = estado->aceleracion_centripeta / G_SUPERFICIE;
+
+    printf("\n+-------------------------------------------------------------------------+\n");
+    printf("|                  TELEMETRIA ORBITAL DETALLADA - NAVE ORION              |\n");
+    printf("+-----------------------------------+--------------------+----------------+\n");
+    printf("| PARAMETRO FISICO                  | VALOR PRINCIPAL    | EQUIVALENCIA   |\n");
+    printf("+-----------------------------------+--------------------+----------------+\n");
+    printf("| Masa de la nave (m_orion)         | %15.2f kg | %10.2f ton |\n", estado->masa_nave_kg, estado->masa_nave_kg / 1000.0);
+    printf("| Altitud sobre superficie (h)      | %15.2f m  | %10.2f km  |\n", estado->altitud_m, altitud_km);
+    printf("| Radio orbital total (r = RT + h)  | %15.2f m  | %10.2f km  |\n", estado->radio_total_m, radio_km);
+    printf("| Velocidad orbital MCU (v)         | %15.2f m/s| %10.2f km/h|\n", estado->velocidad_orbital, velocidad_kmh);
+    printf("| Periodo orbital completo (T)      | %15.2f s  | %10.2f min |\n", estado->periodo_segundos, periodo_min);
+    printf("| Aceleracion centripeta (ac)       | %15.4f m/s2| %10.4f g   |\n", estado->aceleracion_centripeta, factor_g);
+    printf("| Fuerza gravitatoria / centripeta  | %15.2f N  | %10.2f kN  |\n", fuerza_centripeta, fuerza_centripeta / 1000.0);
+    printf("+-----------------------------------+--------------------+----------------+\n");
+}
+
+// Muestra el reporte tabular del pulso lateral y describe la trayectoria resultante
+void mostrar_reporte_maniobra(const EstadoOrbital *estado, const ManiobraLateral *maniobra) {
+    if (!estado || !maniobra) return;
+
+    // Magnitud de la velocidad total combinando vectores perpendiculares
+    double v_total = sqrt((estado->velocidad_orbital * estado->velocidad_orbital) +
+                          (maniobra->v_y * maniobra->v_y));
+
+    printf("\n+-------------------------------------------------------------------------+\n");
+    printf("|               REPORTE DE MANIOBRA DE PROPULSION LATERAL                 |\n");
+    printf("+----------------------------------------+-------------------+------------+\n");
+    printf("| PARAMETRO DE PERTURBACION              | VALOR CALCULADO   | UNIDAD     |\n");
+    printf("+----------------------------------------+-------------------+------------+\n");
+    printf("| Aceleracion lateral aplicada (a_y)     | %17.2f | m/s^2      |\n", maniobra->a_y);
+    printf("| Duracion del pulso auxiliar (Delta t)  | %17.2f | s          |\n", maniobra->delta_t);
+    printf("| Velocidad lateral adquirida (v_y)      | %17.2f | m/s        |\n", maniobra->v_y);
+    printf("| Desviacion lateral instantanea (Dy)    | %17.2f | m          |\n", maniobra->delta_y);
+    printf("| Nueva rapidez orbital resultante       | %17.2f | m/s        |\n", v_total);
+    printf("+----------------------------------------+-------------------+------------+\n");
+    printf("| ANALISIS FISICO DE TRAYECTORIA RESULTANTE (Consigna d):                 |\n");
+    printf("| - Durante el pulso (%.1f s): La nave superpone su MCU tangencial con un |\n", maniobra->delta_t);
+    printf("|   MRUV transversal, describiendo un ARCO PARABOLICO desviandose %.2f m.|\n", maniobra->delta_y);
+    printf("| - Post-apagado: Por inercia (1ra Ley de Newton), mantiene la componente |\n");
+    printf("|   lateral v_y = %.2f m/s, rotando levemente su plano de inclinacion.    |\n", maniobra->v_y);
+    printf("+-------------------------------------------------------------------------+\n");
+}
