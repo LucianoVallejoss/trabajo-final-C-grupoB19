@@ -35,6 +35,7 @@
 *.i*86
 *.x86_64
 *.hex
+artemis
 
 # Debug files
 *.dSYM/
@@ -53,3 +54,19 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# --- ADICIONES ESPECIFICAS PARA EL PROYECTO ARTEMIS ---
+
+# Archivos generados por la ejecucion local
+reporte_mision.txt
+
+# Configuraciones de editores e IDEs (VS Code, CLion, etc.)
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Archivos basura del sistema operativo
+.DS_Store
+Thumbs.db
+ehthumbs.db
