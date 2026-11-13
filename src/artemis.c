@@ -124,3 +124,80 @@ void mostrar_reporte_maniobra(const EstadoOrbital *estado, const ManiobraLateral
     printf("|   lateral v_y = %.2f m/s, rotando levemente su plano de inclinacion.    |\n", maniobra->v_y);
     printf("+-------------------------------------------------------------------------+\n");
 }
+// Tarea 4a: Almacena una ejecucion en el arreglo de historial (maximo 50)
+int guardar_en_historial(RegistroMision historial[], int *cant_actual,
+                         const EstadoOrbital *estado, const ManiobraLateral *maniobra,
+                         int hubo_maniobra) {
+    if (!historial || !cant_actual || !estado) return 0;
+
+    // Verificar que no se supere el limite de 50 simulaciones
+    if (*cant_actual >= MAX_HISTORIAL) {
+        printf("\n[AVISO]: Historial lleno (%d/%d). No se pueden registrar mas simulaciones.\n",
+               *cant_actual, MAX_HISTORIAL);
+        return 0;
+    }
+
+    int i = *cant_actual;
+
+    // Guardar copia del estado y metadatos en la posicion libre del arreglo
+    historial[i].id_simulacion = i + 1;
+    historial[i].orbita = *estado;
+    historial[i].hubo_maniobra = hubo_maniobra;
+
+    if (hubo_maniobra && maniobra != NULL) {
+        historial[i].maniobra = *maniobra;
+    } else {
+        historial[i].maniobra.a_y = 0.0;
+        historial[i].maniobra.delta_t = 0.0;
+        historial[i].maniobra.v_y = 0.0;
+        historial[i].maniobra.delta_y = 0.0;
+    }
+
+    // Incrementar el contador total de simulaciones por referencia
+    (*cant_actual)++;
+    return 1;
+}
+
+// Emite reporte final de auditoria
+void mostrar_reporte_final_historial(const RegistroMision historial[], int cant_actual) {
+    printf("\n=========================================================================================\n");
+    printf("                    REPORTE FINAL DE AUDITORIA - HISTORIAL DE SIMULACIONES               \n");
+    printf("=========================================================================================\n");
+
+    if (!historial || cant_actual <= 0) {
+        printf("  No se registraron simulaciones en el historial durante esta sesion.\n");
+        printf("=========================================================================================\n");
+        return;
+    }
+
+    printf("+----+-------------+-------------+-------------+-------------+------------+-------------+\n");
+    printf("| ID | ALTITUD (m) | MASA (kg)   | VEL. (m/s)  | PERIODO (s) | MANIOBRA   | DESVIO (m)  |\n");
+    printf("+----+-------------+-------------+-------------+-------------+------------+-------------+\n");
+
+    int maniobras_realizadas = 0;
+
+    for (int i = 0; i < cant_actual; i++) {
+        if (historial[i].hubo_maniobra) {
+            maniobras_realizadas++;
+            printf("| %2d | %11.1f | %11.1f | %11.2f | %11.1f |     SI     | %11.2f |\n",
+                   historial[i].id_simulacion,
+                   historial[i].orbita.altitud_m,
+                   historial[i].orbita.masa_nave_kg,
+                   historial[i].orbita.velocidad_orbital,
+                   historial[i].orbita.periodo_segundos,
+                   historial[i].maniobra.delta_y);
+        } else {
+            printf("| %2d | %11.1f | %11.1f | %11.2f | %11.1f |     NO     |        0.00 |\n",
+                   historial[i].id_simulacion,
+                   historial[i].orbita.altitud_m,
+                   historial[i].orbita.masa_nave_kg,
+                   historial[i].orbita.velocidad_orbital,
+                   historial[i].orbita.periodo_segundos);
+        }
+    }
+
+    printf("+----+-------------+-------------+-------------+-------------+------------+-------------+\n");
+    printf("  Total de ejecuciones auditadas: %d/%d | Con maniobra lateral: %d\n",
+           cant_actual, MAX_HISTORIAL, maniobras_realizadas);
+    printf("=========================================================================================\n");
+}
