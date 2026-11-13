@@ -11,9 +11,9 @@
 | Apellido y Nombre | Comisión | Rol en el Proyecto |
 | :--- | :--- | :--- |
 | *(Completar Integrante 1)* |1.2 | Dinámica Física Orbital y MCU (`artemis.h/c`) |
-| *(Completar Integrante 2)* |1.2 | Maniobras de Propulsión e Historial (`artemis.h/c`) |
+| *Gesto, Emiliano Joaquín* |1.2 | Maniobras de Propulsión e Historial (`artemis.h/c`) |
 | *Miño, Juan Antonio* |1.2 | Módulo de Entrada Segura y Validaciones (`validaciones.h/c`) |
-| *Melis Asoya, Alvaro Joel* |1.2 | Menú Principal, Integración, Makefile y Documentación (`main.c`) |
+| *Melis Asoya, Álvaro Joel* |1.2 | Menú Principal, Integración, Makefile y Documentación (`main.c`) |
 
 ---
 
