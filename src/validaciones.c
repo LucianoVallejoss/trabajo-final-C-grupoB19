@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include <math.h>
 #include "validaciones.h"
 
 #define BUFFER_SIZE 128
@@ -11,6 +12,18 @@
 static int solo_espacios(const char *texto) {
     while (*texto != '\0') {
         if (!isspace((unsigned char)*texto)) {
+            return 0;
+        }
+        texto++;
+    }
+    return 1;
+}
+
+static int es_texto_numerico(const char *texto) {
+    while (*texto != '\0') {
+        if (!isdigit((unsigned char)*texto) && !isspace((unsigned char)*texto) &&
+            *texto != '+' && *texto != '-' && *texto != '.' &&
+            *texto != 'e' && *texto != 'E') {
             return 0;
         }
         texto++;
@@ -90,39 +103,13 @@ double leer_double_rango(const char *mensaje, double min, double max) {
         errno = 0;
         valor = strtod(inicio, &fin_ptr);
 
-        if (!solo_espacios(fin_ptr)) {
+        if (!es_texto_numerico(inicio) || !solo_espacios(fin_ptr)) {
             printf("[ADVERTENCIA] Formato invalido. Use punto decimal (ej. 192.5) y solo numeros.\n");
             continue;
         }
 
-        if (errno == ERANGE || valor < min || valor > max) {
+        if (errno == ERANGE || !isfinite(valor) || valor < min || valor > max) {
             printf("[ADVERTENCIA] Valor fuera de rango. Debe estar entre %.2f y %.2f.\n", min, max);
-            continue;
-        }
-
-        return valor;
-    }
-}
-
-double leer_double_mayor_que(const char *mensaje, double limite_inferior) {
-    char buffer[BUFFER_SIZE];
-    char *inicio;
-    char *fin_ptr;
-    double valor;
-
-    while (1) {
-        inicio = leer_linea_no_vacia(mensaje, buffer, BUFFER_SIZE);
-
-        errno = 0;
-        valor = strtod(inicio, &fin_ptr);
-
-        if (!solo_espacios(fin_ptr)) {
-            printf("[ADVERTENCIA] Formato invalido. Ingrese solo valores numericos.\n");
-            continue;
-        }
-
-        if (errno == ERANGE || valor <= limite_inferior) {
-            printf("[ADVERTENCIA] El valor debe ser estrictamente mayor a %.2f.\n", limite_inferior);
             continue;
         }
 
