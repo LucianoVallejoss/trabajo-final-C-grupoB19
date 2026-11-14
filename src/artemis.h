@@ -10,6 +10,13 @@
 
 // Constantes de auditoria e historial
 #define MAX_HISTORIAL 50           // Capacidad maxima de simulaciones almacenadas
+#define ALTITUD_MIN_M     100000.0 // m (100 km)
+#define ALTITUD_MAX_M    2000000.0 // m (2000 km: limite superior de la LEO)
+#define MASA_MIN_KG          1000.0 // kg
+#define MASA_MAX_KG       1000000.0 // kg
+#define ACEL_LATERAL_MAX      100.0 // m/s^2 (en valor absoluto)
+#define DURACION_MIN_S          0.1 // s
+#define DURACION_MAX_S       3600.0 // s
 
 // Representacion del estado de la nave en orbita LEO
 typedef struct {
