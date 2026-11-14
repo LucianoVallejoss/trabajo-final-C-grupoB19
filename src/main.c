@@ -11,10 +11,7 @@ int main(void) {
     int hubo_maniobra_actual = 0;
     int opcion = 0;
 
-    // Inicializar estado orbital nominal (h = 192 km, m = 33000 kg)
     inicializar_estado_base(&estado);
-
-    // Inicializar maniobra lateral por defecto (a_y = 0.50 m/s^2, dt = 10 s)
     ejecutar_pulso_lateral(&maniobra, 0.50, 10.0);
 
     do {
@@ -27,10 +24,11 @@ int main(void) {
         printf(" 4. Simular pulso de propulsor auxiliar lateral\n");
         printf(" 5. Guardar simulacion actual en el historial (%d/%d)\n", cant_historial, MAX_HISTORIAL);
         printf(" 6. Emitir reporte final de auditoria del historial\n");
-        printf(" 7. Salir\n");
+        printf(" 7. JUGAR: Mision Artemis (5 Orbitas por Turnos)\n");
+        printf(" 8. Salir\n");
         printf("=========================================================================\n");
 
-        opcion = leer_entero_rango(" Seleccione una opcion (1-7): ", 1, 7);
+        opcion = leer_entero_rango(" Seleccione una opcion (1-8): ", 1, 8);
 
         switch (opcion) {
             case 1:
@@ -84,14 +82,18 @@ int main(void) {
                 break;
 
             case 7:
+                iniciar_campana_turnos(historial, &cant_historial);
+                break;
+
+            case 8:
                 printf("\nFinalizando simulador Artemis LEO.\n");
                 break;
         }
 
-    if (opcion != 7) {
+        if (opcion != 8) {
             pausar_consola();
         }
-    } while (opcion != 7);
+    } while (opcion != 8);
 
     return 0;
 }

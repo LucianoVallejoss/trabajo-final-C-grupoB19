@@ -1,6 +1,9 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
+#include <time.h>
 #include "artemis.h"
+#include "validaciones.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -18,19 +21,10 @@ void inicializar_estado_base(EstadoOrbital *estado) {
 void recalcular_dinamica_orbital(EstadoOrbital *estado) {
     if (!estado) return;
 
-    // 1. Radio orbital total: r = RT + h
     estado->radio_total_m = R_TIERRA + estado->altitud_m;
-
-    // 2. Velocidad orbital para MCU: v = sqrt(G * MT / r)
     estado->velocidad_orbital = sqrt((G_CONST * M_TIERRA) / estado->radio_total_m);
-
-    // 3. Periodo orbital: T = (2 * pi * r) / v
     estado->periodo_segundos = (2.0 * M_PI * estado->radio_total_m) / estado->velocidad_orbital;
-
-    // 4. Aceleracion centripeta: ac = v^2 / r
     estado->aceleracion_centripeta = (estado->velocidad_orbital * estado->velocidad_orbital) / estado->radio_total_m;
-
-    // 5. Verificacion automatica de zona segura LEO
     estado->es_orbita_estable = verificar_estabilidad_orbital(estado);
 }
 
@@ -58,20 +52,16 @@ void imprimir_demostracion_teorica(void) {
     printf("- Depende unicamente de la masa del cuerpo central (Tierra) y de la distancia r.\n");
     printf("----------------------------------------------------------------------\n");
 }
+
 // Calcula la cinematica del pulso perpendicular por referencia
 void ejecutar_pulso_lateral(ManiobraLateral *maniobra, double a_y, double delta_t) {
     if (!maniobra) return;
-    
-    // 1. Almacenar parametros de entrada en la estructura apuntada
     maniobra->a_y = a_y;
     maniobra->delta_t = delta_t;
-
-    // 2. Velocidad lateral adquirida: vy = a * dt
     maniobra->v_y = maniobra->a_y * maniobra->delta_t;
-
-    // 3. Desplazamiento transversal instantaneo: dy = (1/2) * a * dt^2
     maniobra->delta_y = 0.5 * maniobra->a_y * (maniobra->delta_t * maniobra->delta_t);
 }
+
 // Muestra en tabla todos los parametros orbitales
 void mostrar_telemetria_detallada(const EstadoOrbital *estado) {
     if (!estado) return;
@@ -102,7 +92,6 @@ void mostrar_telemetria_detallada(const EstadoOrbital *estado) {
 void mostrar_reporte_maniobra(const EstadoOrbital *estado, const ManiobraLateral *maniobra) {
     if (!estado || !maniobra) return;
 
-    // Magnitud de la velocidad total combinando vectores perpendiculares
     double v_total = sqrt((estado->velocidad_orbital * estado->velocidad_orbital) +
                           (maniobra->v_y * maniobra->v_y));
 
@@ -124,13 +113,13 @@ void mostrar_reporte_maniobra(const EstadoOrbital *estado, const ManiobraLateral
     printf("|   lateral v_y = %.2f m/s, rotando levemente su plano de inclinacion.    |\n", maniobra->v_y);
     printf("+-------------------------------------------------------------------------+\n");
 }
-// Tarea 4a: Almacena una ejecucion en el arreglo de historial (maximo 50)
+
+// Almacena una ejecucion en el arreglo de historial (maximo 50)
 int guardar_en_historial(RegistroMision historial[], int *cant_actual,
                          const EstadoOrbital *estado, const ManiobraLateral *maniobra,
                          int hubo_maniobra) {
     if (!historial || !cant_actual || !estado) return 0;
 
-    // Verificar que no se supere el limite de 50 simulaciones
     if (*cant_actual >= MAX_HISTORIAL) {
         printf("\n[AVISO]: Historial lleno (%d/%d). No se pueden registrar mas simulaciones.\n",
                *cant_actual, MAX_HISTORIAL);
@@ -138,8 +127,6 @@ int guardar_en_historial(RegistroMision historial[], int *cant_actual,
     }
 
     int i = *cant_actual;
-
-    // Guardar copia del estado y metadatos en la posicion libre del arreglo
     historial[i].id_simulacion = i + 1;
     historial[i].orbita = *estado;
     historial[i].hubo_maniobra = hubo_maniobra;
@@ -153,7 +140,6 @@ int guardar_en_historial(RegistroMision historial[], int *cant_actual,
         historial[i].maniobra.delta_y = 0.0;
     }
 
-    // Incrementar el contador total de simulaciones por referencia
     (*cant_actual)++;
     return 1;
 }
@@ -200,4 +186,187 @@ void mostrar_reporte_final_historial(const RegistroMision historial[], int cant_
     printf("  Total de ejecuciones auditadas: %d/%d | Con maniobra lateral: %d\n",
            cant_actual, MAX_HISTORIAL, maniobras_realizadas);
     printf("=========================================================================================\n");
+}
+
+
+
+// MODO DE JUEGO INTERACTIVO: CAMPANA DE SIMULACION POR TURNOS (5 ORBITAS)
+
+void iniciar_campana_turnos(RegistroMision historial[], int *cant_historial) {
+    EstadoOrbital nave;
+    ManiobraLateral maniobra;
+    inicializar_estado_base(&nave);
+
+    double combustible_kg = 500.0;
+    int integridad_casco = 100;
+    int puntaje = 0;
+    int mision_fallida = 0;
+    int mision_abortada = 0;
+    const int TOTAL_TURNOS = 5;
+
+    srand((unsigned int)time(NULL));
+
+    printf("\n=========================================================================\n");
+    printf("       MODO MISION ARTEMIS: SUPERVIVENCIA EN ORBITA LEO (5 TURNOS)         \n");
+    printf("=========================================================================\n");
+    printf(" OBJETIVO DE MISION:\n");
+    printf(" - Completar 5 orbitas manteniendo la nave en zona segura (> 160.0 km),\n");
+    printf("   conservando la integridad del casco (100%%) y administrando 500.0 kg\n");
+    printf("   de combustible.\n");
+    printf(" - Evalua los sensores en cada orbita y elegi la maniobra adecuada.\n");
+    printf("=========================================================================\n");
+
+    int secuencia_eventos[5] = {1, 2, 3, 1, 2};
+    for (int i = 1; i < TOTAL_TURNOS; i++) {
+        int j = 1 + (rand() % (TOTAL_TURNOS - 1));
+        int temp = secuencia_eventos[i];
+        secuencia_eventos[i] = secuencia_eventos[j];
+        secuencia_eventos[j] = temp;
+    }
+
+    for (int turno = 1; turno <= TOTAL_TURNOS; turno++) {
+        nave.altitud_m -= 4000.0;
+        recalcular_dinamica_orbital(&nave);
+
+        printf("\n-------------------------------------------------------------------------\n");
+        printf(" ORBITA %d de %d\n", turno, TOTAL_TURNOS);
+        printf(" TELEMETRIA  -> Altitud: %.1f km (Limite critico: 160.0 km)\n", nave.altitud_m / 1000.0);
+        printf(" RECURSOS    -> Combustible: %.1f kg | Integridad Casco: %d%%\n", combustible_kg, integridad_casco);
+        printf("-------------------------------------------------------------------------\n");
+
+        if (!nave.es_orbita_estable) {
+            printf("\n[DERROTA]: La altitud cayo por debajo de 160.0 km. Reingreso atmosferico.\n");
+            mision_fallida = 1;
+            break;
+        }
+
+        int tipo_evento = secuencia_eventos[turno - 1];
+        double desvio_objetivo = 0.0;
+
+        if (tipo_evento == 1) {
+            desvio_objetivo = 25.0 + (turno * 5.0);
+            printf(" [SENSOR DE PROXIMIDAD]: Basura espacial en trayectoria de colision!\n");
+            printf("  -> Desviacion lateral minima requerida para evadir: %.1f metros.\n", desvio_objetivo);
+        } else if (tipo_evento == 2) {
+            nave.altitud_m -= 14000.0;
+            recalcular_dinamica_orbital(&nave);
+            printf(" [ALERTA SOLAR]: Tormenta geomagnetica provoca decaimiento de 14.0 km!\n");
+            printf("  -> Altitud actual tras la perturbacion: %.1f km.\n", nave.altitud_m / 1000.0);
+            if (!nave.es_orbita_estable) {
+                printf("\n[DERROTA]: Caiste debajo de 160.0 km tras la tormenta solar.\n");
+                mision_fallida = 1;
+                break;
+            }
+        } else {
+            printf(" [RADAR ORBITAL]: Sector despejado. No se detectan amenazas ni anomalias.\n");
+        }
+
+        printf("\n ACCIONES DE MANDO:\n");
+        printf("  1. Ejecutar pulso lateral RCS (Desvio: Dy = 0.5 * a_y * dt^2)\n");
+        printf("  2. Encender motor principal (+15.0 km de altitud | Costo: 75.0 kg comb.)\n");
+        printf("  3. Mantener orbita pasiva (Costo: 0.0 kg comb.)\n");
+        printf("  4. Abortar mision y volver al menu principal\n");
+
+        int accion = leer_entero_rango(" Seleccione una opcion (1-4): ", 1, 4);
+
+        if (accion == 4) {
+            printf("\n[MISION ABORTADA]: Retornando al centro de control principal...\n");
+            mision_abortada = 1;
+            break;
+        }
+
+        if (accion == 1) {
+            printf("\n --- PARAMETROS DEL PROPULSOR LATERAL ---\n");
+            printf(" Formulas: Dy = 0.5 * a_y * dt^2  |  Consumo = a_y * dt * 8.0 kg\n");
+
+            double a_y = leer_double_rango("  -> Aceleracion lateral a_y [m/s^2] (0.5 a 20.0): ", 0.5, 20.0);
+            double dt = leer_double_rango("  -> Duracion del pulso dt [s] (1.0 a 30.0): ", 1.0, 30.0);
+
+            double consumo = (a_y * dt) * 8.0;
+            if (consumo > combustible_kg) {
+                printf("\n[DERROTA]: Combustible insuficiente para completar el encendido (requiere %.1f kg, disponible %.1f kg).\n",
+                       consumo, combustible_kg);
+                combustible_kg = 0.0;
+                mision_fallida = 1;
+                break;
+            }
+
+            combustible_kg -= consumo;
+            ejecutar_pulso_lateral(&maniobra, a_y, dt);
+            guardar_en_historial(historial, cant_historial, &nave, &maniobra, 1);
+
+            printf("\n [TELEMETRIA PULSO]: vy = %.2f m/s | Desvio Dy = %.2f m | Combustible usado = %.1f kg\n",
+                   maniobra.v_y, maniobra.delta_y, consumo);
+
+            if (tipo_evento == 1) {
+                if (maniobra.delta_y >= desvio_objetivo) {
+                    printf(" [EXITO]: Evasion completada (%.2f m >= %.1f m). +200 puntos.\n",
+                           maniobra.delta_y, desvio_objetivo);
+                    puntaje += 200;
+                } else {
+                    integridad_casco -= 50;
+                    printf(" [IMPACTO PARCIAL]: Desvio insuficiente (%.2f m < %.1f m). Casco -50%%.\n",
+                           maniobra.delta_y, desvio_objetivo);
+                    if (integridad_casco <= 0) {
+                        printf("\n[DERROTA]: Integridad del casco en 0%%. Nave perdida.\n");
+                        mision_fallida = 1;
+                        break;
+                    }
+                }
+            } else {
+                printf(" [AVISO]: Pulso lateral innecesario en este sector (+50 puntos).\n");
+                puntaje += 50;
+            }
+
+        } else if (accion == 2) {
+            if (tipo_evento == 1) {
+                printf("\n[DERROTA]: El cambio de altitud no evito la colision lateral con la basura espacial!\n");
+                integridad_casco = 0;
+                mision_fallida = 1;
+                break;
+            }
+            if (combustible_kg < 75.0) {
+                printf("\n[AVISO]: Combustible insuficiente para el motor principal (disponible %.1f kg, requiere 75.0 kg).\n", combustible_kg);
+            } else {
+                combustible_kg -= 75.0;
+                nave.altitud_m += 15000.0;
+                recalcular_dinamica_orbital(&nave);
+                guardar_en_historial(historial, cant_historial, &nave, NULL, 0);
+                printf("\n [EXITO]: Altitud elevada a %.1f km (Nueva vel: %.2f m/s). +200 puntos.\n",
+                       nave.altitud_m / 1000.0, nave.velocidad_orbital);
+                puntaje += 200;
+            }
+
+        } else {
+            if (tipo_evento == 1) {
+                printf("\n[DERROTA]: Impacto directo contra basura espacial por falta de maniobra!\n");
+                integridad_casco = 0;
+                mision_fallida = 1;
+                break;
+            }
+            printf("\n [EXITO]: Orbita mantenida sin gasto de propelente. +150 puntos.\n");
+            puntaje += 150;
+        }
+    }
+
+    if (mision_abortada) {
+        return;
+    }
+
+    if (!mision_fallida) {
+        puntaje += (int)(combustible_kg * 0.5) + (integridad_casco * 2);
+    }
+
+    printf("\n=========================================================================\n");
+    printf("               BOLETIN FINAL DE DESEMPENO - MISION ARTEMIS               \n");
+    printf("=========================================================================\n");
+    printf(" Estado final           : %s\n", mision_fallida ? "MISION FALLIDA" : "MISION CUMPLIDA (5 Orbitas completadas)");
+    printf(" Altitud final          : %.2f km\n", nave.altitud_m / 1000.0);
+    printf(" Combustible sobrante   : %.1f kg de 500.0 kg\n", combustible_kg);
+    printf(" Integridad del casco   : %d%%\n", integridad_casco < 0 ? 0 : integridad_casco);
+    printf(" Puntaje total          : %d pts\n", puntaje);
+    printf(" Calificacion           : %s\n",
+           mision_fallida ? "Cadete (Reintentar simulacion)" :
+           (puntaje >= 900 ? "Comandante Artemis (Excelente)" : "Piloto Orbital (Aprobado)"));
+    printf("=========================================================================\n");
 }
