@@ -7,46 +7,64 @@
 
 #define BUFFER_SIZE 128
 
-static void limpiar_buffer_entrada(const char *buffer) {
+// Devuelve 1 si el texto esta vacio o contiene solo espacios
+static int solo_espacios(const char *texto) {
+    while (*texto != '\0') {
+        if (!isspace((unsigned char)*texto)) {
+            return 0;
+        }
+        texto++;
+    }
+    return 1;
+}
+
+static char *leer_linea(const char *mensaje, char *buffer, int tam) {
+    char *inicio;
+
+    printf("%s", mensaje);
+
+    if (fgets(buffer, tam, stdin) == NULL) {
+        printf("\n[ERROR] Fin de la entrada. Cerrando el programa.\n");
+        exit(EXIT_FAILURE);
+    }
+
     if (strchr(buffer, '\n') == NULL) {
         int c;
         while ((c = getchar()) != '\n' && c != EOF);
+    }
+
+    inicio = buffer;
+    while (isspace((unsigned char)*inicio)) {
+        inicio++;
+    }
+    return inicio;
+}
+
+static char *leer_linea_no_vacia(const char *mensaje, char *buffer, int tam) {
+    char *inicio;
+
+    while (1) {
+        inicio = leer_linea(mensaje, buffer, tam);
+        if (*inicio != '\0') {
+            return inicio;
+        }
+        printf("[ADVERTENCIA] Entrada vacia. Debe ingresar un valor.\n");
     }
 }
 
 int leer_entero_rango(const char *mensaje, int min, int max) {
     char buffer[BUFFER_SIZE];
+    char *inicio;
     char *fin_ptr;
     long valor;
 
     while (1) {
-        printf("%s", mensaje);
-
-        if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
-            printf("[ERROR] Error inesperado de lectura. Intente nuevamente.\n");
-            continue;
-        }
-
-        limpiar_buffer_entrada(buffer);
-
-        char *inicio = buffer;
-        while (isspace((unsigned char)*inicio)) {
-            inicio++;
-        }
-
-        if (*inicio == '\0') {
-            printf("[ADVERTENCIA] Entrada vacia. Debe ingresar un numero entero.\n");
-            continue;
-        }
+        inicio = leer_linea_no_vacia(mensaje, buffer, BUFFER_SIZE);
 
         errno = 0;
         valor = strtol(inicio, &fin_ptr, 10);
 
-        while (isspace((unsigned char)*fin_ptr)) {
-            fin_ptr++;
-        }
-
-        if (*fin_ptr != '\0') {
+        if (!solo_espacios(fin_ptr)) {
             printf("[ADVERTENCIA] Entrada invalida. Ingrese unicamente numeros enteros.\n");
             continue;
         }
@@ -62,37 +80,17 @@ int leer_entero_rango(const char *mensaje, int min, int max) {
 
 double leer_double_rango(const char *mensaje, double min, double max) {
     char buffer[BUFFER_SIZE];
+    char *inicio;
     char *fin_ptr;
     double valor;
 
     while (1) {
-        printf("%s", mensaje);
-
-        if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
-            printf("[ERROR] Error inesperado de lectura. Intente nuevamente.\n");
-            continue;
-        }
-
-        limpiar_buffer_entrada(buffer);
-
-        char *inicio = buffer;
-        while (isspace((unsigned char)*inicio)) {
-            inicio++;
-        }
-
-        if (*inicio == '\0') {
-            printf("[ADVERTENCIA] Entrada vacia. Debe ingresar un valor numerico.\n");
-            continue;
-        }
+        inicio = leer_linea_no_vacia(mensaje, buffer, BUFFER_SIZE);
 
         errno = 0;
         valor = strtod(inicio, &fin_ptr);
 
-        while (isspace((unsigned char)*fin_ptr)) {
-            fin_ptr++;
-        }
-
-        if (*fin_ptr != '\0') {
+        if (!solo_espacios(fin_ptr)) {
             printf("[ADVERTENCIA] Formato invalido. Use punto decimal (ej. 192.5) y solo numeros.\n");
             continue;
         }
@@ -108,37 +106,17 @@ double leer_double_rango(const char *mensaje, double min, double max) {
 
 double leer_double_mayor_que(const char *mensaje, double limite_inferior) {
     char buffer[BUFFER_SIZE];
+    char *inicio;
     char *fin_ptr;
     double valor;
 
     while (1) {
-        printf("%s", mensaje);
-
-        if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
-            printf("[ERROR] Error inesperado de lectura. Intente nuevamente.\n");
-            continue;
-        }
-
-        limpiar_buffer_entrada(buffer);
-
-        char *inicio = buffer;
-        while (isspace((unsigned char)*inicio)) {
-            inicio++;
-        }
-
-        if (*inicio == '\0') {
-            printf("[ADVERTENCIA] Entrada vacia. Debe ingresar un valor numerico.\n");
-            continue;
-        }
+        inicio = leer_linea_no_vacia(mensaje, buffer, BUFFER_SIZE);
 
         errno = 0;
         valor = strtod(inicio, &fin_ptr);
 
-        while (isspace((unsigned char)*fin_ptr)) {
-            fin_ptr++;
-        }
-
-        if (*fin_ptr != '\0') {
+        if (!solo_espacios(fin_ptr)) {
             printf("[ADVERTENCIA] Formato invalido. Ingrese solo valores numericos.\n");
             continue;
         }
@@ -156,32 +134,16 @@ char leer_opcion_caracter(const char *mensaje, char op1, char op2) {
     char buffer[BUFFER_SIZE];
     char c1 = (char)tolower((unsigned char)op1);
     char c2 = (char)tolower((unsigned char)op2);
+    char *inicio;
+    char elegida;
 
     while (1) {
-        printf("%s", mensaje);
+        inicio = leer_linea(mensaje, buffer, BUFFER_SIZE);
+        elegida = (char)tolower((unsigned char)*inicio);
 
-        if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
-            printf("[ERROR] Error inesperado de lectura.\n");
-            continue;
-        }
-
-        limpiar_buffer_entrada(buffer);
-
-        char *inicio = buffer;
-        while (isspace((unsigned char)*inicio)) {
-            inicio++;
-        }
-
-        char elegida = (char)tolower((unsigned char)*inicio);
-
-        if (elegida != '\0') {
-            char *resto = inicio + 1;
-            while (isspace((unsigned char)*resto)) {
-                resto++;
-            }
-            if (*resto == '\0' && (elegida == c1 || elegida == c2)) {
-                return elegida;
-            }
+        if (elegida != '\0' && solo_espacios(inicio + 1) &&
+            (elegida == c1 || elegida == c2)) {
+            return elegida;
         }
 
         printf("[ADVERTENCIA] Opcion invalida. Ingrese '%c' o '%c'.\n", op1, op2);
@@ -190,8 +152,6 @@ char leer_opcion_caracter(const char *mensaje, char op1, char op2) {
 
 void pausar_consola(void) {
     char buffer[BUFFER_SIZE];
-    printf("\nPresione ENTER para continuar...");
-    if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
-        limpiar_buffer_entrada(buffer);
-    }
+
+    leer_linea("\nPresione ENTER para continuar...", buffer, BUFFER_SIZE);
 }

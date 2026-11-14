@@ -39,8 +39,8 @@ int main(void) {
 
             case 2: {
                 printf("\n--- CONFIGURACION DE PARAMETROS ORBITALES ---\n");
-                double nueva_alt = leer_double_rango(" Ingrese nueva altitud h [m] (ej. 192000): ", 100000.0, 2000000.0);
-                double nueva_masa = leer_double_positivo(" Ingrese masa de la nave Orion [kg] (ej. 33000): ");
+                double nueva_alt = leer_double_rango(" Ingrese nueva altitud h [m] (100000 - 2000000, ej. 192000): ", ALTITUD_MIN_M, ALTITUD_MAX_M);
+                double nueva_masa = leer_double_rango(" Ingrese masa de la nave Orion [kg] (1000 - 1000000, ej. 33000): ", MASA_MIN_KG, MASA_MAX_KG);
 
                 estado.altitud_m = nueva_alt;
                 estado.masa_nave_kg = nueva_masa;
@@ -60,9 +60,8 @@ int main(void) {
 
             case 4: {
                 printf("\n--- SIMULACION DE MANIOBRA DE PROPULSION LATERAL ---\n");
-                double a_aux = leer_double_positivo(" Ingrese aceleracion lateral constante a_y [m/s^2] (ej. 0.50): ");
-                double dt_aux = leer_double_positivo(" Ingrese duracion del encendido Delta t [s] (ej. 10.0): ");
-
+                double a_aux = leer_double_rango(" Ingrese aceleracion lateral a_y [m/s^2] (-100 a 100, ej. 0.50): ", -ACEL_LATERAL_MAX, ACEL_LATERAL_MAX);
+                double dt_aux = leer_double_rango(" Ingrese duracion del encendido Delta t [s] (0.1 - 3600, ej. 10.0): ", DURACION_MIN_S, DURACION_MAX_S);
                 ejecutar_pulso_lateral(&maniobra, a_aux, dt_aux);
                 hubo_maniobra_actual = 1;
                 mostrar_reporte_maniobra(&estado, &maniobra);
@@ -70,6 +69,11 @@ int main(void) {
             }
 
             case 5:
+                if (!hubo_maniobra_actual &&
+                    leer_opcion_caracter(" No hay maniobra aplicada. Guardar solo la orbita? (s/n): ", 's', 'n') == 'n') {
+                    printf("\n[AVISO]: Simulacion no guardada.\n");
+                    break;
+                }
                 if (guardar_en_historial(historial, &cant_historial, &estado, &maniobra, hubo_maniobra_actual)) {
                     printf("\n[OK]: Ejecucion registrada con exito en el historial (ID #%d).\n", cant_historial);
                 }
@@ -80,10 +84,13 @@ int main(void) {
                 break;
 
             case 7:
-                printf("\nFinalizando simulador Artemis LEO. ¡Exitos en el coloquio!\n");
+                printf("\nFinalizando simulador Artemis LEO.\n");
                 break;
         }
 
+    if (opcion != 7) {
+            pausar_consola();
+        }
     } while (opcion != 7);
 
     return 0;

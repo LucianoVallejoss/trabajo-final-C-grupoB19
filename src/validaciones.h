@@ -1,7 +1,7 @@
 #ifndef VALIDACIONES_H
 #define VALIDACIONES_H
 
-int Lleer_entero_rango(const char *mensaje, int min, int max);
+int leer_entero_rango(const char *mensaje, int min, int max);
 
 double leer_double_rango(const char *mensaje, double min, double max);
 
