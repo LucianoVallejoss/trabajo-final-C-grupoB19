@@ -58,4 +58,7 @@ int guardar_en_historial(RegistroMision historial[], int *cant_actual,
                          int hubo_maniobra);
 void mostrar_reporte_final_historial(const RegistroMision historial[], int cant_actual);
 
+// Modalidad de juego interactivo por turnos
+void iniciar_campana_turnos(RegistroMision historial[], int *cant_historial);
+
 #endif
